@@ -1,0 +1,19 @@
+       _            _           
+      | |          (_)          
+  __ _| | __ _  ___ _  ___ _ __ 
+ / _` | |/ _` |/ __| |/ _ \ '__|
+| (_| | | (_| | (__| |  __/ |   
+ \__, |_|\__,_|\___|_|\___|_|   
+  __/ |                         
+ |___/    
+
+A Python library for accessing Amazon Glacier
+
+Requires Python 2.5 or later (earlier versions not tested).
+No Python 3 support yet.
+
+Website: http://glacier.github.com
+Git Repository: http://github.com/paulengstler/glacier.git
+
+The library is still work in progress and not complete but I'm working on it.
+If you want to contribute feel free to do so and fork glacier on github!
