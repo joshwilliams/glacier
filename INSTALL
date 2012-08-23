@@ -1,0 +1,12 @@
+using easy_install or pip
+------------
+ easy_install glacier
+ pip install glacier
+
+
+installing from source
+--------------------------------
+ git clone git://github.com/paulengstler/glacier.git
+ cd glacier
+ python setup.py install (run as admin/root)
+
