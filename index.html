@@ -16,7 +16,7 @@
     <div class="wrapper">
       <header>
         <h1>Glacier</h1>
-        <p>A Python library for accessing Amazon Glacier</p>
+        <p>A lightweight library for accessing Amazon Glacier in Python</p>
 
         <p class="view"><a href="https://github.com/paulengstler/glacier">View the Project on GitHub <small>paulengstler/glacier</small></a></p>
 
@@ -28,16 +28,78 @@
         </ul>
       </header>
       <section>
-        <p>A Python library for accessing Amazon Glacier</p>
+        <h3>What is Glacier?</h3>
 
-<p>Requires Python 2.5 or later (earlier versions not tested).
-No Python 3 support yet.</p>
+<p>Glacier strives to be a simple library for using <a href="http://aws.amazon.com/glacier/">Amazon Glacier</a> by providing an intuitive and easy to use API. Because of its license it can be included in any project.</p>
 
-<p>Website: <a href="http://glacier.github.com">http://glacier.github.com</a>
-Git Repository: <a href="http://github.com/paulengstler/glacier.git">http://github.com/paulengstler/glacier.git</a></p>
+<h3>How to install Glacier?</h3>
 
-<p>The library is still work in progress and not complete but I'm working on it.
-If you want to contribute feel free to do so and fork glacier on github!</p>
+<p>To install Glacier you can use <em>easy_install</em> or <em>pip</em>:</p>
+
+<p><code>easy_install glacier</code></p>
+
+<p><code>pip install glacier</code></p>
+
+<p>You can also pull the source code and install glacier manually:</p>
+
+<pre><code>git clone git://github.com/paulengstler/glacier.git
+cd glacier
+python setup.py install (run as admin/root)
+</code></pre>
+
+<h3>So, how easy to use is Glacier?</h3>
+
+<p>Once you get the hang of it, it will be really simple to use Glacier. This library has three built-in types ready to use:</p>
+
+<ul>
+<li>
+<strong>Connection</strong> - The gate to connect to Amazon Glacier in the right region</li>
+<li>
+<strong>Vault</strong> - A data storage representation to access and store your data</li>
+<li>
+<strong>Archive</strong> - A representation of either local or remote data in Amazon's Glacier</li>
+</ul><div class="highlight"><pre><span class="kn">from</span> <span class="nn">glacier</span> <span class="kn">import</span> <span class="n">Connection</span><span class="p">,</span> <span class="n">Vault</span><span class="p">,</span> <span class="n">Archive</span>
+
+<span class="c"># establish the connection</span>
+<span class="n">connection</span> <span class="o">=</span> <span class="n">Connection</span><span class="p">(</span><span class="s">"Access Key"</span><span class="p">,</span><span class="s">"Secret Access Key"</span><span class="p">)</span>
+
+<span class="c"># get the vault "my_vault"</span>
+<span class="n">vault</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">get_vault</span><span class="p">(</span><span class="s">"my_vault"</span><span class="p">)</span>
+
+<span class="c"># get the local file "myfile.txt"</span>
+<span class="n">archive</span> <span class="o">=</span> <span class="n">Archive</span><span class="p">(</span><span class="s">"/home/paul/myfile.txt"</span><span class="p">)</span>
+
+<span class="c"># get the remote archive with its cryptic id</span>
+<span class="n">rarchive</span> <span class="o">=</span> <span class="n">Archive</span><span class="p">(</span><span class="s">"normallythisshouldbe138byteslong"</span><span class="p">)</span>
+
+<span class="c"># delete the remote archive</span>
+<span class="n">vault</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">rarchive</span><span class="p">)</span>
+
+<span class="c"># upload the file in "my_vault"</span>
+<span class="n">vault</span><span class="o">.</span><span class="n">upload</span><span class="p">(</span><span class="n">archive</span><span class="p">)</span>
+
+<span class="c"># be happy :)</span>
+<span class="k">print</span> <span class="s">"Great! Now my file has the ID "</span> <span class="o">+</span> <span class="n">archive</span><span class="o">.</span><span class="n">id</span>
+</pre></div>
+
+<p>Actually, it will be more difficult to understand how Amazon Glacier itself works rather than this library. </p>
+
+<h3>What are the downsides?</h3>
+
+<p>Glacier is <em>pretty much</em> untested and lacks some functionality (multipart uploads, proper error handling). However, that will change soon. Also, Glacier has no archive ID storage yet. You will have to store the archive IDs by yourself until there will be a module.</p>
+
+<h3>Can I contribute?</h3>
+
+<p>Yes, absolutely! 4 simple steps:</p>
+
+<ol>
+<li><p>Fork glacier on github</p></li>
+<li><p>Create a new branch</p></li>
+<li><p>Commit changes to that branch</p></li>
+<li><p>Send a pull request</p></li>
+</ol><p>Thanks for using Glacier!</p>
+
+<p><a href="http://paulengstler.com">Paul</a> :)</p>
       </section>
       <footer>
         <p>This project is maintained by <a href="https://github.com/paulengstler">paulengstler</a></p>
