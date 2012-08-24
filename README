@@ -12,7 +12,7 @@ A Python library for accessing Amazon Glacier
 Requires Python 2.5 or later (earlier versions not tested).
 No Python 3 support yet.
 
-Website: http://glacier.github.com
+Website: http://paulengstler.github.com/glacier/
 Git Repository: http://github.com/paulengstler/glacier.git
 
 The library is still work in progress and not complete but I'm working on it.
