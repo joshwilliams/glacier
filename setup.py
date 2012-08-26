@@ -8,4 +8,4 @@ setup(name="glacier",
       author="Paul Engstler",
       author_email="hi@paulengstler.com",
       url="http://github.com/paulengstler/glacier",
-      packages = [])
+      packages = ['glacier'])
