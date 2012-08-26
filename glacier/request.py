@@ -2,7 +2,7 @@
 # Copyright 2012 Paul Engstler
 # See LICENSE for details.
 
-import time, utils, httplib
+import time, utils, httplib, os, math
 
 class Request():
 
@@ -24,7 +24,8 @@ class Request():
 
 	"""
 
-	def __init__(self,connection,region,method,path,signed=[],header={},body=""):
+	def __init__(self,connection,region,method,path,signed=[],header={},
+		body=""):
 		self.access_key = connection.access_key
 		self.secret_access_key = connection.secret_access_key
 		self.host = "glacier." + region + ".amazonaws.com"
@@ -44,14 +45,20 @@ class Request():
 			hv = self.header[hk]
 			req += hk.lower()+":"+hv+"\n"
 		req += "\n" + ";".join(self.signed_headers) + "\n"
-		req += utils.sha256(self.body)
+		if not self.header["x-amz-content-sha256"]:
+			req += utils.sha256(self.body)
+		else:
+			req += self.header["x-amz-content-sha256"]
 		return req
 
 	def string_to_sign(self,canonical_request):	
-		return "\n".join(["AWS4-HMAC-SHA256",self.header["x-amz-date"],utils.time("%Y%m%d")+"/us-east-1/glacier/aws4_request",utils.sha256(canonical_request)])
+		return "\n".join(["AWS4-HMAC-SHA256",self.header["x-amz-date"],
+		utils.time("%Y%m%d")+"/us-east-1/glacier/aws4_request",
+		utils.sha256(canonical_request)])
     
 	def derived_key(self):
-		kDate = utils.sign(("AWS4" + self.secret_access_key).encode("utf-8"), utils.time("%Y%m%d"))
+		kDate = utils.sign(("AWS4" + self.secret_access_key).encode("utf-8"),
+		utils.time("%Y%m%d"))
 		kRegion = utils.sign(kDate, self.region)
 		kService = utils.sign(kRegion, "glacier")
 		kSigning = utils.sign(kService, "aws4_request")
@@ -65,8 +72,12 @@ class Request():
 		sts = self.string_to_sign(cr)
 		dk = self.derived_key()
 		sgn = self.signature(dk,sts)
-		return "AWS4-HMAC-SHA256 Credential="+self.access_key+"/"+utils.time("%Y%m%d")+"/"+self.region+"/glacier/aws4_request,SignedHeaders=" + ";".join(self.signed_headers) + ",Signature="+sgn
-
+		return "AWS4-HMAC-SHA256 Credential="+self.access_key+"/"+\
+			utils.time("%Y%m%d")+"/"+self.region+\
+			"/glacier/aws4_request,SignedHeaders="+\
+			";".join(self.signed_headers)+\
+			",Signature="+sgn
+	
 	def build_header(self,additional):
 		header = {
 			"host": self.host,
@@ -87,6 +98,21 @@ class Request():
 
 		# Always via HTTPS!
 		connection = httplib.HTTPSConnection(self.host)
-		connection.request(self.method, self.path, self.body, self.header)
+		# uncomment if you want to debug the network i/o
+		# connection.set_debuglevel(1)
+		connection.connect()
+		connection.request(self.method,self.path,"",self.header)
+		
+		if isinstance(self.body,file):
+			# stream the file in 10 MB chunks to keep the memory usage low
+			self.body.seek(0)
+			chunk_size = int(1024*1024*10)
+			file_size = float(os.fstat(self.body.fileno()).st_size)
+			chunk_count = int(math.ceil(file_size/float(chunk_size)))
+			for _ in range(chunk_count):
+				connection.send(self.body.read(chunk_size))
+		else:
+			# send the full string
+			connection.send(self.body)
 
 		return connection.getresponse()

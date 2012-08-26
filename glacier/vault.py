@@ -8,17 +8,40 @@ from request import Request
 class Vault(object):
 	""" Vault API """
 	
-	def __init__(self,name,connection):
+	def __init__(self, name, connection):
+		"""
+            Creates a vault instance
+            
+			:param name: name of the vault
+            :parm connection: Connection instance connected to the vault's
+			region
+        """
 		self.connection = connection
 		self.name = name
 		self.region = self.connection.region
 
 	def describe(self):
-		req = Request(self.connection,self.region,"GET","/-/vaults/"+self.name)
+		"""
+            Returns a description of the vault by requesting it
+			from Amazon Glacier
+            
+			:return: Parsed answer from Amazon Glacier
+			:rtype: dictionary
+        """
+		req = Request(self.connection, self.region, "GET",
+		"/-/vaults/"+self.name)
 		resp = req.send_request()
 		return json.loads(resp.read())
 
-	def upload(self,archive,description=""):
+	def upload(self, archive, description=""):
+		"""
+            Uploads an archive to this vault
+            
+			:param archive: An archive initialized with a file name
+			:param description: Description of the archive (optional)
+
+			:rtype: archive
+        """
 		header = 	{ 	
 							"Content-Length":str(archive.size), 
 							"x-amz-sha256-tree-hash":archive.treehash, 
@@ -37,65 +60,111 @@ class Vault(object):
 		resp = req.send_request()
 
 		if resp.status != 201:
-			raise Exception("archive could not be created",resp)
+			raise Exception("archive could not be created", resp)
 
 		# assign the id to the archive
 		archive.id = resp.getheader("x-amz-archive-id")
 
 		return archive
 
-	def delete(self,archive):
+	def delete(self, archive):
+		"""
+            Deletes an archive in this vault
+            
+			:param archive: An archive initialized with an id
+        """
 		req = self.connection.make_request(	"DELETE",
-											"/-/vaults/"+self.name+"/archives/"+archive.id)
+											"/-/vaults/"+self.name
+											+"/archives/"+archive.id)
 		resp = req.send_request()
 
 		if resp.status != 204:
-			raise Exception("could not delete " + archive.id,resp)
+			raise Exception("could not delete " + archive.id, resp)
 
 	# Notifications
 
-	def set_notifications(self,snstopic,events):
-		config = { "SNSTopic":snstopic,"Events":events }
+	def set_notifications(self, snstopic, events):
+		"""
+            Sets the notification topic and events for the vault
+            
+			:param snstopic: The SNS topic to which the selected events should
+			be reported to
+			:param events: The events that trigger a notification sent to the
+			SNS topic
+			:type snstopic: string
+			:type events: list, tuple
+        """
+		config = { "SNSTopic":snstopic, "Events":events }
 		req = self.connection.make_request(	"PUT",
-											"/-/vaults/"+self.name+"/notification-configuration",
+											"/-/vaults/"+self.name
+											+"/notification-configuration",
 											body=json.dumps(config))
 		resp = req.send_request()
 
 		if resp.status != 204:
-			raise Exception("could not set notifications",resp)
+			raise Exception("could not set notifications", resp)
 
 	def get_notifications(self):
+		"""
+            Gets the notification topic and events for the vault
+            
+			:return: Parsed answer from Amazon Glacier
+			:rtype: dictionary
+        """
 		req = self.connection.make_request(	"GET",
-											"/-/vaults/"+self.name+"/notification-configuration")
+											"/-/vaults/"+self.name
+											+"/notification-configuration")
 		resp = req.send_request()
 	
 		if resp.status != 200:
-			raise Exception("could not get notifications",resp)
+			raise Exception("could not get notifications", resp)
 
-		return resp.read()
+		return json.loads(resp.read())
 
 	def delete_notifications(self):
+		"""
+            Deletes the notification topic and events for the vault
+        """
 		req = self.connection.make_request(	"DELETE",
-											"/-/vaults/"+self.name+"/notification-configuration")
+											"/-/vaults/"+self.name
+											+"/notification-configuration")
 		resp = req.send_request()
 
 		if resp.status != 204:
-			raise Exception("could not delete notifications",resp)
+			raise Exception("could not delete notifications", resp)
 
 	# Jobs 
 
-	def initiate_job(self,type,description="",archive=None,format="",snstopic=""):
-		if type == "archive-retrieval" and not archive:
-			raise Exception("no archive passed for job type 'archive-retrieval'")
+	def initiate_job(self, jtype, description="", archive=None, snstopic=""):
+		"""
+            Initiates a job executed in the vault
+            
+			:param jtype: Type of job (``archive-retrieval`` or 
+			``inventory-retrieval``)
+ 			:param description: Description of the job (optional)
+			:param archive: An archive instance (required for
+			``archive-retrieval``)
+			:param snstopic: SNS topic where a notification is sent to on
+			completion
+			
+			:type jtype: string
+			:type description: string
+			:type archive: string
+			:type snstopic: string
+
+			:return: job id
+			:rtype: string
+        """
+		if jtype == "archive-retrieval" and not archive:
+			raise Exception("""no archive was passed for job type 
+			'archive-retrieval'""")
 		
-		jobr = { "Type":type }
+		jobr = { "Type":jtype }
 		if description:
 			jobr["Description"] = description
-		if format:
-			jobr["Format"] = format
 		if snstopic:
 			jobr["SNSTopic"] = snstopic
-		if type == "archive-retrieval":
+		if jtype == "archive-retrieval":
 			jobr["ArchiveId"] = archive.id
 
 		req = self.connection.make_request(	"POST",
@@ -104,42 +173,69 @@ class Vault(object):
 		resp = req.send_request()
 
 		if resp.status != 202:
-			raise Exception("could not initiate job",resp)
+			raise Exception("could not initiate job", resp)
 
 		return resp.getheader("x-amz-job-id")
 			
-	def describe_job(self,jid):
+	def describe_job(self, jid):
+		"""
+            Returns a description of the job by requesting it from 
+			Amazon Glacier
+            
+			:param jid: The job id
+			:type jid: string
+
+			:return: Parsed answer from Amazon Glacier
+			:rtype: dictionary
+        """
 		req = self.connection.make_request(	"GET",
-											"/-/vaults/"+self.name+"/jobs/"+jid,
-											body=json.dumps(jobr))
+											"/-/vaults/"+self.name+"/jobs/"+jid)
 		resp = req.send_request()
 
 		if resp.status != 201:
-			raise Exception("could not describe job",resp)
+			raise Exception("could not describe job", resp)
 
-		return json.dumps(resp.read())
+		return json.loads(resp.read())
 
-	def get_job_output(self,jid,byte_range=-1):
+	def get_job_output(self, jid, byte_range="-1"):
+		"""
+            Gets the job output
+            
+			:param jid: The job id
+			:param byte_range: Byte range to get (optional)
+			:type jid: string
+			:type byte_range: string
+
+			:return: Parsed answer from Amazon Glacier
+			:rtype: dictionary
+        """
 		header = {}
-		if byte_range != -1:
+		if byte_range != "-1":
 			header["Range"] = byte_range
 
 		req = self.connection.make_request(	"GET",
-											"/-/vaults/"+self.name+"/jobs/"+jid+"/output",
+											"/-/vaults/"+self.name+"/jobs/"
+											+jid+"/output",
 											header=header)
 		resp = req.send_request()
 
 		if resp.status != 200:
-			raise Exception("could not get job output",resp)
+			raise Exception("could not get job output", resp)
 
-		return json.dumps(resp.read())
+		return json.loads(resp.read())
 
 	def list_jobs(self):
+		"""
+            Lists all jobs for this vault
+
+			:return: Parsed answer from Amazon Glacier
+			:rtype: dictionary
+        """
 		req = self.connection.make_request(	"GET",
 											"/-/vaults/"+self.name+"/jobs")
 		resp = req.send_request()
 
 		if resp.status != 200:
-			raise Exception("could not get list jobs",resp)
+			raise Exception("could not get list jobs", resp)
 
-		return json.dumps(resp.read())
+		return json.loads(resp.read())

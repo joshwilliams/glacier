@@ -1,0 +1,37 @@
+
+Changes with glacier 0.11 											26 Aug 2012
+
+Simple version:
+	
+	*)	The memory usage has been reduced dramatically especially for big
+		files. This library is now able to operate in low-memory environments
+		like the Raspberry Pi.
+
+	*)	Uploading files is trouble-free now as the algorithm was replaced
+		and "just works".
+
+	*)	Functions have gotten detailed description in this source code.
+
+Detailed version:
+
+	*) 	Feature: API description. Most functions have gotten a description
+		of what they do and how they operate. Those are written in a Sphix-
+		compatible format.
+
+	*) 	Change: File hash algorithm was replaced to work with low memory usage
+		(utils.sha256_file).
+
+	*)	Change: Request's body can now be a file object which will be streamed
+		to the API in small chunks to keep the memory usage low.
+		(Request.send_request).
+
+	*)	Change: All lines exceeding 80 characters were shortened for better
+		readability.
+		
+	*)	Bugfix:	Some functions had returned a JSON string instead of a 
+		parsed dictionary.
+
+	*)	Bugfix:	All imports have been reduced to their truly needed modules.
+
+	*)	Bugfix:	Hash tree algorithm was replaced (thanks to hareevs!) to
+		prevent strange and unpredictable outcomes as with the old one.

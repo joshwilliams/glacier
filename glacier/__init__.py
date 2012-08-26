@@ -2,7 +2,7 @@
 # Copyright 2012 Paul Engstler
 # See LICENSE for details.
 
-__version__ = "0.1"
+__version__ = "0.11"
 __author__ = "Paul Engstler"
 __license__ = "MIT"
 

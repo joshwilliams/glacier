@@ -27,5 +27,8 @@ job_id = example_vault.initiate_job("inventory-retrieval")
 #
 # However, each time you call the command you send a request which
 # can potentially cost you (more) money.
+#
+# The more cost-efficient way is to wait until a notification arrives
+# in your SNS topic.
 
 inventory = example_vault.get_job_output(job_id)
