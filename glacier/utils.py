@@ -64,10 +64,25 @@ def get_tree_hash(chunk_hashes):
 	hashes = chunk_hashes[:]
 
 	while len(hashes) > 1:
-		hashes = [sha256_digest("".join(hashes[i:i+2]))
-		for i in xrange(0, len(hashes), 2)]
-
+		new_hashes = []
+		while len(hashes) > 0:
+			if len(hashes) > 1:
+				# at least two hashes available
+				first = hashes.pop(0)
+				second = hashes.pop(0)
+				new_hashes.append(sha256_digest("".join((first, second))))
+			elif len(hashes) == 1:
+				# just one hash available and because he has no hash partner :(
+				# we move him to the next level as well.
+				new_hashes.append(hashes.pop(0))
+		# move to the next level
+		hashes.extend(new_hashes)
 	return hashes[0].encode("hex")
 
 def time(format="%Y%m%d"):
+	"""
+		Returns the time in a certain format.
+
+		:rtype: string
+	"""
 	return strftime(format, gmtime())

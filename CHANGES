@@ -1,4 +1,11 @@
 
+Changes with glacier 0.12											27 Aug 2012
+
+	*) 	Bugfix: Odd chunk counts did not work for the new tree hash algorithm
+		so it was replaced by another new algorithm which has mastered both
+		odd and even chunk count tests.
+
+
 Changes with glacier 0.11 											26 Aug 2012
 
 Simple version:
@@ -7,7 +14,7 @@ Simple version:
 		files. This library is now able to operate in low-memory environments
 		like the Raspberry Pi.
 
-	*)	Uploading files is trouble-free now as the algorithm was replaced
+	*)	Uploading files is trouble-free as the algorithm was replaced
 		and "just works".
 
 	*)	Functions have gotten detailed description in this source code.

@@ -2,7 +2,7 @@
 from distutils.core import setup
 
 setup(name="glacier",
-      version="0.11",
+      version="0.12",
       description="library to access Amazon Glacier",
       license="MIT",
       author="Paul Engstler",
