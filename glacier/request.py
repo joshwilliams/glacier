@@ -45,7 +45,7 @@ class Request():
 			hv = self.header[hk]
 			req += hk.lower()+":"+hv+"\n"
 		req += "\n" + ";".join(self.signed_headers) + "\n"
-		if not self.header["x-amz-content-sha256"]:
+		if not self.header.get("x-amz-content-sha256"):
 			req += utils.sha256(self.body)
 		else:
 			req += self.header["x-amz-content-sha256"]
