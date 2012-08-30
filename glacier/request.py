@@ -53,7 +53,8 @@ class Request():
 
 	def string_to_sign(self,canonical_request):	
 		return "\n".join(["AWS4-HMAC-SHA256",self.header["x-amz-date"],
-		utils.time("%Y%m%d")+"/us-east-1/glacier/aws4_request",
+		"%(time)s/%(region)s/glacier/aws4_request" % \
+		{"time":utils.time("%Y%m%d"),"region": self.region},
 		utils.sha256(canonical_request)])
     
 	def derived_key(self):
