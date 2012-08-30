@@ -45,7 +45,7 @@ class Request():
 			hv = self.header[hk]
 			req += hk.lower()+":"+hv+"\n"
 		req += "\n" + ";".join(self.signed_headers) + "\n"
-		if not self.header["x-amz-content-sha256"]:
+		if not self.header.get("x-amz-content-sha256"):
 			req += utils.sha256(self.body)
 		else:
 			req += self.header["x-amz-content-sha256"]
@@ -53,7 +53,8 @@ class Request():
 
 	def string_to_sign(self,canonical_request):	
 		return "\n".join(["AWS4-HMAC-SHA256",self.header["x-amz-date"],
-		utils.time("%Y%m%d")+"/us-east-1/glacier/aws4_request",
+		"%(time)s/%(region)s/glacier/aws4_request" % \
+		{"time":utils.time("%Y%m%d"),"region": self.region},
 		utils.sha256(canonical_request)])
     
 	def derived_key(self):
