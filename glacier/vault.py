@@ -95,9 +95,11 @@ class Vault(object):
 			:type events: list, tuple
         """
 		config = { "SNSTopic":snstopic, "Events":events }
+		header = { "Content-Length":str(len(json.dumps(config))) }
 		req = self.connection.make_request(	"PUT",
 											"/-/vaults/"+self.name
 											+"/notification-configuration",
+											header=header,
 											body=json.dumps(config))
 		resp = req.send_request()
 
@@ -167,8 +169,10 @@ class Vault(object):
 		if jtype == "archive-retrieval":
 			jobr["ArchiveId"] = archive.id
 
+		header = { "Content-Length":str(len(json.dumps(jobr))) }
 		req = self.connection.make_request(	"POST",
 											"/-/vaults/"+self.name+"/jobs",
+											header=header,
 											body=json.dumps(jobr))
 		resp = req.send_request()
 
