@@ -40,14 +40,35 @@ class Archive(object):
 		else:
 			try:
 				self.file = open(inp,"r")
-				self.path = inp
-				self.size = os.fstat(self.file.fileno()).st_size
-				self.hash = utils.sha256(self.file)
-				self.treehash = self.get_tree_hash()
 			except IOError:
 				raise IOError("file " + inp + " does not exist.")
 
-	def get_tree_hash(self):
+			self.path = inp
+			self.size = os.fstat(self.file.fileno()).st_size
+			self.hash = None
+			self.treehash = None
+
+	def get_hash(self):
+		if not self._hash:
+			self._hash = utils.sha256(self.file)
+		return self._hash
+
+	def set_hash(self, hashvalue):
+		self._hash = hashvalue
+
+	hash = property(get_hash, set_hash)
+
+	def get_treehash(self):
+		if not self._treehash:
+			self._treehash = self.calculate_tree_hash()
+		return self._treehash
+
+	def set_treehash(self, hashvalue):
+		self._treehash = hashvalue
+
+	treehash = property(get_treehash, set_treehash)
+
+	def calculate_tree_hash(self):
 		"""
             Returns the tree hash of the archive
 
