@@ -67,6 +67,140 @@ class Vault(object):
 
 		return archive
 
+	def list_multipart_uploads(self):
+		"""
+            Lists the current multi-uploads in progress
+            
+			:return: Parsed answer from Amazon Glacier
+			:rtype: dictionary
+        """
+		req = self.connection.make_request(	"GET",
+											"/-/vaults/"+self.name
+											+"/multipart-uploads")
+		resp = req.send_request()
+	
+		if resp.status != 200:
+			raise Exception("could not get uploads", resp)
+
+		return json.loads(resp.read())
+
+	def initiate_multipart_upload(self, archive, description=""):
+		"""
+            Starts a multipart upload to this vault
+            
+			:param archive: An archive initialized with a file name
+			:param description: Description of the archive (optional)
+
+			:rtype: string
+        """
+		header = 	{ 	
+							"x-amz-part-size":str(archive.partsize),
+                            "Content-Length":"0"
+					}
+
+		if description:
+			header["x-amz-archive-description"] = description
+
+		req = self.connection.make_request(	"POST",
+											"/-/vaults/"+self.name+"/multipart-uploads",
+											header=header)
+											
+		resp = req.send_request()
+
+		if resp.status != 201:
+			raise Exception("archive could not be created", resp)
+
+		# set the ID provided to the multi-part upload into the archive
+		archive.multi_part_id = resp.getheader("x-amz-multipart-upload-id")
+		return archive.multi_part_id
+
+	def upload_part(self, archive, part):
+		"""
+            Uploads an archive to this vault
+            
+			:param archive: An archive initialized with a file name
+			:param part: Description of the archive (optional)
+
+			:rtype: archive
+        """
+		header = 	{ 	
+							"Content-Length":str(archive.part_size(part)), 
+							"Content-Range":archive.content_range(part), 
+							"Content-Type":"application/octet-stream",
+							"x-amz-sha256-tree-hash":archive.calculate_tree_hash(part),
+							"x-amz-content-sha256":archive.part_hash(part)
+					}
+
+		req = self.connection.make_request(	"PUT",
+											"/-/vaults/"+self.name+"/multipart-uploads/"+archive.multi_part_id,
+											signed=["x-amz-content-sha256"],
+											header=header,
+											body=archive.read_part(part))
+											
+		resp = req.send_request()
+
+		if resp.status != 204:
+			raise Exception("error completing multi-part upload process", resp)
+
+		return True
+
+	def list_upload_parts(self, archive):
+		"""
+            Lists the parts uploaded to a multi-upload
+            
+			:return: Parsed answer from Amazon Glacier
+			:rtype: dictionary
+        """
+		req = self.connection.make_request(	"GET",
+											"/-/vaults/"+self.name
+											+"/multipart-uploads/"+archive.multi_part_id)
+		resp = req.send_request()
+	
+		if resp.status != 200:
+			raise Exception("could not get uploads", resp)
+
+		return json.loads(resp.read())
+
+	def complete_multipart_upload(self, archive):
+		"""
+            Completes the multi-part upload process
+            
+			:param archive: An archive initialized with a file name
+
+			:rtype: archive
+        """
+		header = 	{ 	
+							"x-amz-archive-size":str(archive.size),
+							"x-amz-sha256-tree-hash":archive.treehash
+					}
+
+		req = self.connection.make_request(	"POST",
+											"/-/vaults/"+self.name+"/multipart-uploads/"+archive.multi_part_id,
+											header=header)
+											
+		resp = req.send_request()
+
+		if resp.status != 201:
+			raise Exception("error completing the multi-part transfer", resp)
+
+		# assign the id to the archive
+		archive.id = resp.getheader("x-amz-archive-id")
+		return archive.id
+
+	def abort_multipart_upload(self, archive):
+		"""
+            Aborts the multi-part upload process attached to an archive
+            
+			:param archive: An archive initialized with an id
+        """
+		req = self.connection.make_request(	"DELETE",
+											"/-/vaults/"+self.name
+											+"/multipart-uploads/"+archive.multi_part_id)
+		resp = req.send_request()
+
+		if resp.status != 204:
+			raise Exception("could not delete " + archive.multi_part_id, resp)
+
 	def delete(self, archive):
 		"""
             Deletes an archive in this vault

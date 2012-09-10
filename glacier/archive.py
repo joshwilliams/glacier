@@ -35,6 +35,8 @@ class Archive(object):
 		# this: "\ ". This doesn't work for Python. Remove each backslash
 		# and you will running again.
 
+		self.partsize = 1024 * 1024 * 64 # 64M parts, because why not
+
 		if len(inp) == 138 and not os.path.isfile(inp):
 			self.id = inp
 		else:
@@ -45,6 +47,7 @@ class Archive(object):
 
 			self.path = inp
 			self.size = os.fstat(self.file.fileno()).st_size
+			self.partcount = int(math.ceil(float(self.size)/float(self.partsize)))
 			self.hash = None
 			self.treehash = None
 
@@ -68,22 +71,29 @@ class Archive(object):
 
 	treehash = property(get_treehash, set_treehash)
 
-	def calculate_tree_hash(self):
+	def calculate_tree_hash(self, part=None):
 		"""
-            Returns the tree hash of the archive
+		Returns the tree hash of the archive, the entire file
+		if the part number is not given, or just the part if so
 
-			.. note:: only works with a local archive
-        """
-        # This process takes some time for bigger files, please be patient
+		.. note:: only works with a local archive
+
+		:param part: The part number if hashing just one part
+		:type inp: integer
+		"""
+		# This process takes some time for bigger files, please be patient
 		# "The progress bar is moving but the remaining time is going up!"
 		# - CollegeHumor, Matrix runs on WinXP
-        
-		chunk_size = 1024*1024 # 1 MB chunks
-		chunk_count = int(math.ceil(float(self.size)/float(chunk_size)))
 
 		chunk_hashes = []
-
-		self.file.seek(0)
+        
+		chunk_size = 1024*1024 # 1 MB chunks
+		if part != None:
+			chunk_count = int(math.ceil(float(self.part_size(part))/float(chunk_size)))
+			self.file.seek(self.partsize * part)
+		else:
+			chunk_count = int(math.ceil(float(self.size)/float(chunk_size)))
+			self.file.seek(0)
 
 		for _ in range(chunk_count):
 			# Read and immediately hash the chunk portion, we just need
@@ -92,3 +102,44 @@ class Archive(object):
 			chunk_hashes.append(utils.sha256_digest(self.file.read(chunk_size)))
     
 		return utils.get_tree_hash(chunk_hashes)
+	
+	def read_part(self, part):
+		"""
+            Returns the actual bytes of the requested part
+		"""
+		self.file.seek(self.partsize * part)
+		return self.file.read(self.part_size(part))
+
+	def part_hash(self, part):
+		"""
+            Returns the sha256 hashof the requested part
+		"""
+		return utils.sha256(self.read_part(part))
+
+	def part_size(self, part):
+		"""
+            Returns the size in bytes of the requested part
+
+			.. note:: This could use a better, less ambiguous name ... TODO
+
+			:param part: The part number
+            :type inp: integer
+        """
+		if part > self.partcount - 1:
+			raise IndexError("archive does not contain part")
+
+		# The last part may be smaller than partsize, naturally...
+		if part == self.partcount - 1:
+			return self.size - (self.partsize * part)
+		else:
+			return self.partsize
+	
+	def content_range(self, part):
+		"""
+            Returns the byte content range for the requested part
+
+			:param part: The part number
+            :type inp: integer
+        """
+		return "bytes " + str(part * self.partsize) + "-" + str((part * self.partsize) + self.part_size(part) - 1) + "/*"
+
