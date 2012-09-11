@@ -1,4 +1,4 @@
-m# Glacier
+# Glacier
 # Copyright 2012 Paul Engstler
 # See LICENSE for details.
 
