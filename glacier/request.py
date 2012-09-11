@@ -1,8 +1,8 @@
-# Glacier
+m# Glacier
 # Copyright 2012 Paul Engstler
 # See LICENSE for details.
 
-import time, utils, httplib, os, math
+import time, utils, httplib, os, math, hashlib
 
 class Request():
 
@@ -38,6 +38,12 @@ class Request():
 		self.signed_headers.sort()
 		self.body = body
 
+	def hexhash(self,data):
+		h = hashlib.sha256()
+		h.update(data)
+		return h.hexdigest()
+
+
 	def canonical_request(self):
 		# body is hashed here TODO
 		req = self.method + "\n" + self.path + "\n\n"
@@ -46,16 +52,14 @@ class Request():
 			req += hk.lower()+":"+hv+"\n"
 		req += "\n" + ";".join(self.signed_headers) + "\n"
 		if not self.header.get("x-amz-content-sha256"):
-			req += utils.sha256(self.body)
+			req += self.hexhash(self.body)
 		else:
 			req += self.header["x-amz-content-sha256"]
 		return req
 
 	def string_to_sign(self,canonical_request):	
 		return "\n".join(["AWS4-HMAC-SHA256",self.header["x-amz-date"],
-		"%(time)s/%(region)s/glacier/aws4_request" % \
-		{"time":utils.time("%Y%m%d"),"region": self.region},
-		utils.sha256(canonical_request)])
+		"%(time)s/%(region)s/glacier/aws4_request\n%(hashthing)s" % {"time":utils.time("%Y%m%d"),"region": self.region,"hashthing":self.hexhash(canonical_request)}])
     
 	def derived_key(self):
 		kDate = utils.sign(("AWS4" + self.secret_access_key).encode("utf-8"),
@@ -102,7 +106,6 @@ class Request():
 		# uncomment if you want to debug the network i/o
 		# connection.set_debuglevel(1)
 		connection.connect()
-		connection.request(self.method,self.path,"",self.header)
 		
 		if isinstance(self.body,file):
 			# stream the file in 10 MB chunks to keep the memory usage low
@@ -110,10 +113,13 @@ class Request():
 			chunk_size = int(1024*1024*10)
 			file_size = float(os.fstat(self.body.fileno()).st_size)
 			chunk_count = int(math.ceil(file_size/float(chunk_size)))
+
+			# send the data
+			connection.request(self.method,self.path,"",self.header)
 			for _ in range(chunk_count):
 				connection.send(self.body.read(chunk_size))
 		else:
-			# send the full string
-			connection.send(self.body)
+			# send the whole body
+			connection.request(self.method,self.path,self.body,self.header)
 
 		return connection.getresponse()

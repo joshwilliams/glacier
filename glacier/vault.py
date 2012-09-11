@@ -13,7 +13,7 @@ class Vault(object):
             Creates a vault instance
             
 			:param name: name of the vault
-            :parm connection: Connection instance connected to the vault's
+            		:parm connection: Connection instance connected to the vault's
 			region
         """
 		self.connection = connection
@@ -52,10 +52,10 @@ class Vault(object):
 			header["x-amz-archive-description"] = description
 
 		req = self.connection.make_request(	"POST",
-											"/-/vaults/"+self.name+"/archives",
-											signed=["x-amz-content-sha256"],
-											header=header,
-											body=archive.file)
+							"/-/vaults/"+self.name+"/archives",
+							signed=["x-amz-content-sha256"],
+							header=header,
+							body=archive.file)
 											
 		resp = req.send_request()
 
@@ -74,8 +74,8 @@ class Vault(object):
 			:param archive: An archive initialized with an id
         """
 		req = self.connection.make_request(	"DELETE",
-											"/-/vaults/"+self.name
-											+"/archives/"+archive.id)
+							"/-/vaults/"+self.name+\
+							"/archives/"+archive.id)
 		resp = req.send_request()
 
 		if resp.status != 204:
@@ -159,14 +159,13 @@ class Vault(object):
 			raise Exception("""no archive was passed for job type 
 			'archive-retrieval'""")
 		
-		jobr = { "Type":jtype }
+		jobr = { 'Type':jtype }
 		if description:
 			jobr["Description"] = description
 		if snstopic:
 			jobr["SNSTopic"] = snstopic
 		if jtype == "archive-retrieval":
 			jobr["ArchiveId"] = archive.id
-
 		req = self.connection.make_request(	"POST",
 											"/-/vaults/"+self.name+"/jobs",
 											body=json.dumps(jobr))
@@ -191,10 +190,10 @@ class Vault(object):
 		req = self.connection.make_request(	"GET",
 											"/-/vaults/"+self.name+"/jobs/"+jid)
 		resp = req.send_request()
-
-		if resp.status != 201:
+		if resp.status != 201 or resp.status!=200:
+			pass
+		else:
 			raise Exception("could not describe job", resp)
-
 		return json.loads(resp.read())
 
 	def get_job_output(self, jid, byte_range="-1"):
@@ -218,7 +217,7 @@ class Vault(object):
 											+jid+"/output",
 											header=header)
 		resp = req.send_request()
-
+		print resp.status
 		if resp.status != 200:
 			raise Exception("could not get job output", resp)
 

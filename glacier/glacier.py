@@ -45,7 +45,7 @@ class Connection(object):
 	def make_request(self, method, path, header={}, signed=[], body=""):
 		"""
             Returns a ready-to-use request.
-        """
+        """	
 		return Request(	self, self.region, method, path,
 						signed=signed, header=header,
 						body=body)
