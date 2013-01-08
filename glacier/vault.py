@@ -196,7 +196,7 @@ class Vault(object):
 			raise Exception("could not describe job", resp)
 		return json.loads(resp.read())
 
-	def get_job_output(self, jid, byte_range="-1"):
+	def get_job_output(self, jid, byte_range="-1", output="json"):
 		"""
             Gets the job output
             
@@ -220,8 +220,12 @@ class Vault(object):
 		print resp.status
 		if resp.status != 200:
 			raise Exception("could not get job output", resp)
-
-		return json.loads(resp.read())
+		if output == 'json':
+			return json.loads(resp.read())
+		elif output == 'raw':
+			return resp.read()
+		else:
+			raise Exception("invalid output format", output)
 
 	def list_jobs(self):
 		"""
