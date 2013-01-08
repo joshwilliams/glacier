@@ -217,7 +217,7 @@ class Vault(object):
 											+jid+"/output",
 											header=header)
 		resp = req.send_request()
-		print resp.status
+		
 		if resp.status != 200:
 			raise Exception("could not get job output", resp)
 		if output == 'json':
