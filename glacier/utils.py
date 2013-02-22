@@ -5,6 +5,12 @@
 import hashlib, hmac
 from time import strftime, gmtime
 
+def hexhash(data):
+	h = hashlib.sha256()
+	h.update(data)
+	return h.hexdigest()
+
+
 def sha256(value):
 	"""
 		Returns the hexdigested SHA256 hash of the object.
@@ -12,7 +18,7 @@ def sha256(value):
 		:type value: string or file
 	"""
 	if isinstance(value, str):
-		return hashlib.sha256(value).hexdigest()
+		return hexhash(value)
 	elif isinstance(value, file):
 		return sha256_file(value)
 
@@ -59,7 +65,6 @@ def get_tree_hash(chunk_hashes):
 		
 		:type chunk_hashes: list, tuple
 	"""
-	# shout-out to hareevs for this elegant method!
 
 	hashes = chunk_hashes[:]
 
@@ -70,7 +75,7 @@ def get_tree_hash(chunk_hashes):
 				# at least two hashes available
 				first = hashes.pop(0)
 				second = hashes.pop(0)
-				new_hashes.append(sha256_digest("".join((first, second))))
+				new_hashes.append(sha256_digest(first+second))
 			elif len(hashes) == 1:
 				# just one hash available and because he has no hash partner :(
 				# we move him to the next level as well.
